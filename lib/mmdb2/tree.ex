@@ -1,4 +1,5 @@
 defmodule MMDB2.Tree do
+  use Bitwise
 
   def locate({a, b, c, d}, %{ip_version: 6, node_count: node_count, record_size: record_size}, tree) do
     traverse(<<a :: size(8), b :: size(8), c :: size(8), d :: size(8)>>, 96, node_count, record_size, tree)

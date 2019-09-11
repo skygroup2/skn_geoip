@@ -14,15 +14,19 @@ defmodule SknGeoip.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      mod: {GeoIP, []},
+      extra_applications: [:mnesia, :logger, :logger_lager_backend, :ssh, :ranch, :gun, :gen_statem2]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:logger_lager_backend, git: "https://github.com/gskynet/logger_lager_backend.git", branch: "master"},
+      {:skn_lib, git: "git@gitlab.com:gskynet_lib/skn_lib.git", branch: "master"},
+      {:skn_proto, git: "git@gitlab.com:gskynet_lib/skn_proto.git", branch: "master"},
+      {:lager, "~> 3.8", override: true},
+      {:distillery, "~> 2.1"},
     ]
   end
 end

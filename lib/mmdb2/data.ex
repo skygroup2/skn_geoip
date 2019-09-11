@@ -202,11 +202,13 @@ defmodule MMDB2.Data do
     decode_map(dec_rest, data_full, size - 1, [{key, value} | acc], options)
   end
 
-  defp decode_signed(len, <<value::integer-signed-size(len), rest::binary>>) do
+  defp decode_signed(len, bin) do
+    <<value::integer-signed-size(len), rest::binary>> = bin
     {value, rest}
   end
 
-  defp decode_unsigned(len, <<value::integer-unsigned-size(len), rest::binary>>) do
+  defp decode_unsigned(len, bin) do
+    <<value::integer-unsigned-size(len), rest::binary>> = bin
     {value, rest}
   end
 
