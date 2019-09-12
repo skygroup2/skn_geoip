@@ -9,7 +9,6 @@ defmodule GeoIP do
   def start(_type, _args) do
     :rand.seed :exs64, :os.timestamp
     Application.ensure_all_started(:lager)
-    Application.ensure_all_started(:ranch)
     Application.ensure_all_started(:ssh)
     Application.ensure_all_started(:gun)
     Logger.add_backend(LoggerLagerBackend)
@@ -39,7 +38,8 @@ defmodule GeoIP do
   def download_geoLite() do
     url = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.tar.gz"
     headers = %{}
-    http_request("GET", url, headers, "", proxy_option(), nil)
+    bin = http_request("GET", url, headers, "", proxy_option(), nil) |> get_body()
+    File.write!("./GeoLite2-Country.tar.gz", bin, [:write, :binary])
   end
 
   defp proxy_option() do
