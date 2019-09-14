@@ -24,3 +24,6 @@ skn_geoip-*.tar
 
 GeoLite2-Country*
 
+GeoLite2-ASN*
+
+GeoLite2-City*

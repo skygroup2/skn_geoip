@@ -14,7 +14,11 @@ defmodule MMDB2 do
   end
 
   def load_mmdb2() do
-    contents = get_geoLite() |> File.read!()
+    get_geoLite() |> load_mmdb2()
+  end
+
+  def load_mmdb2(file) do
+    contents = File.read!(file)
     case split_contents(contents) do
       [_] -> {:error, :no_metadata}
       [data, meta] -> split_data(meta, data)
