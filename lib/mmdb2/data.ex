@@ -121,7 +121,7 @@ defmodule MMDB2.Data do
   end
 
   defp decode(<<@extended::size(3), len::size(5), @extended_signed_32, part_rest::binary>>, _, _) do
-    decode_signed(len * 8, part_rest)
+    decode_signed(part_rest, len * 8)
   end
 
   defp decode(<<@extended::size(3), len::size(5), @extended_unsigned_64, part_rest::binary>>, _, _) do
@@ -169,7 +169,7 @@ defmodule MMDB2.Data do
   end
 
   defp decode(<<@unsigned_32::size(3), len::size(5), part_rest::binary>>, _, _) do
-    decode_unsigned(len * 8, part_rest)
+    decode_unsigned(part_rest, len * 8)
   end
 
   defp decode_array(data_part, _, 0, acc, _) do
@@ -202,12 +202,12 @@ defmodule MMDB2.Data do
     decode_map(dec_rest, data_full, size - 1, [{key, value} | acc], options)
   end
 
-  defp decode_signed(len, bin) do
+  defp decode_signed(bin, len) do
     <<value::integer-signed-size(len), rest::binary>> = bin
     {value, rest}
   end
 
-  defp decode_unsigned(len, bin) do
+  defp decode_unsigned(bin, len) do
     <<value::integer-unsigned-size(len), rest::binary>> = bin
     {value, rest}
   end
