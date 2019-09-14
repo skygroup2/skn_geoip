@@ -21,6 +21,10 @@ defmodule MMDB2 do
     end
   end
 
+  def write_mmdb2(_file) do
+
+  end
+
   @metadata_marker <<0xAB, 0xCD, 0xEF>> <> "MaxMind.com"
   @metadata_max_size 128 * 1024
   def split_contents(contents) when byte_size(contents) > @metadata_max_size do
