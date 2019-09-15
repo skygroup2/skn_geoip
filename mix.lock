@@ -12,8 +12,8 @@
   "lager": {:hex, :lager, "3.8.0", "3402b9a7e473680ca179fc2f1d827cab88dd37dd1e6113090c6f45ef05228a1c", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
   "logger_lager_backend": {:git, "https://github.com/gskynet/logger_lager_backend.git", "a73e1993e592469b25b00c75a75f9c5886b01cc3", [branch: "master"]},
   "parse_trans": {:hex, :parse_trans, "3.3.0", "09765507a3c7590a784615cfd421d101aec25098d50b89d7aa1d66646bc571c1", [:rebar3], [], "hexpm"},
-  "skn_lib": {:git, "git@gitlab.com:gskynet_lib/skn_lib.git", "a787159cd0e343bb3b4ae07b4b5f2a9e01a6d7d9", [branch: "master"]},
-  "skn_proto": {:git, "git@gitlab.com:gskynet_lib/skn_proto.git", "f0ec2b541312b1c83ad51af01bbedf81cfdcbe14", [branch: "master"]},
+  "skn_lib": {:git, "git@gitlab.com:gskynet_lib/skn_lib.git", "589d66448d4ebae53af2bafe0ea9e95284614935", [branch: "master"]},
+  "skn_proto": {:git, "git@gitlab.com:gskynet_lib/skn_proto.git", "6b43b04284560d97bfea5cdddac0ee322e700a71", [branch: "master"]},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.4", "f0eafff810d2041e93f915ef59899c923f4568f4585904d010387ed74988e77b", [:make, :mix, :rebar3], [], "hexpm"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.4.1", "d869e4c68901dd9531385bb0c8c40444ebf624e60b6962d95952775cac5e90cd", [:rebar3], [], "hexpm"},
 }

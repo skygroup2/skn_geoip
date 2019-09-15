@@ -13,11 +13,8 @@ defmodule MMDB2 do
     end
   end
 
-  def load_mmdb2() do
-    get_geoLite() |> load_mmdb2()
-  end
-
-  def load_mmdb2(file) do
+  def read_mmdb2(name) do
+    file = get_geoLite(name)
     contents = File.read!(file)
     case split_contents(contents) do
       [_] -> {:error, :no_metadata}
@@ -25,8 +22,8 @@ defmodule MMDB2 do
     end
   end
 
-  def write_mmdb2(_file) do
-
+  def write_mmdb2() do
+    :ok
   end
 
   @metadata_marker <<0xAB, 0xCD, 0xEF>> <> "MaxMind.com"
@@ -75,37 +72,30 @@ defmodule MMDB2 do
 
   def default_options, do: [double_precision: nil, float_precision: nil, map_keys: :strings]
 
-  def get_geoLite() do
-    ret = File.ls!() |> Enum.sort() |> Enum.reverse()
-    |> Enum.find(fn x -> File.dir?(x) and String.contains?(x, "GeoLite2-Country_") end)
+  # GeoLite2-Country, GeoLite2-ASN, GeoLite2-City
+  def get_geoLite(name) do
+    all_files = File.ls!() |> Enum.sort() |> Enum.reverse()
+    pattern = name <> "_"
+    ret = Enum.find(all_files, fn x -> File.dir?(x) and String.contains?(x, pattern) end)
     if is_binary(ret) do
-      "./" <> ret <> "/GeoLite2-Country.mmdb"
+      Enum.each(all_files, fn x ->
+        if File.dir?(x) and String.contains?(x, pattern) and x != ret, do: File.rm!(x)
+      end)
+      "./" <> ret <> "/#{name}.mmdb"
     else
-      download_geoLite()
-      get_geoLite()
+      download_geoLite("#{name}.tar.gz")
+      get_geoLite(name)
     end
   end
 
-  def download_geoLite() do
-    tar = "./GeoLite2-Country.tar.gz"
+  def download_geoLite(file) do
+    tar = "./" <> file
     if File.exists?(tar) == false do
-      url = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-Country.tar.gz"
-      bin = http_request("GET", url, %{}, "", proxy_option(), nil) |> get_body()
+      url = "https://geolite.maxmind.com/download/geoip/database/#{file}"
+      bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
       File.write!(tar, bin, [:write, :binary])
     end
     :erl_tar.extract(tar, [:compressed])
     File.rm!(tar)
-  end
-
-  defp proxy_option() do
-    default_opts =
-      %{
-        retry: 0,
-        recv_timeout: 25000,
-        connect_timeout: 35000,
-        retry_timeout: 5000,
-        transport_opts: [{:reuseaddr, true}, {:reuse_sessions, false}, {:linger, {false, 0}}]
-      }
-    default_opts
   end
 end
