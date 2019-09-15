@@ -14,7 +14,7 @@ defmodule MMDB2 do
   end
 
   def read_mmdb2(name) do
-    file = get_geoLite(name)
+    file = get_geoip_path(name)
     contents = File.read!(file)
     case split_contents(contents) do
       [_] -> {:error, :no_metadata}
@@ -73,7 +73,7 @@ defmodule MMDB2 do
   def default_options, do: [double_precision: nil, float_precision: nil, map_keys: :strings]
 
   # GeoLite2-Country, GeoLite2-ASN, GeoLite2-City
-  def get_geoLite(name) do
+  def get_geoip_path(name) do
     all_files = File.ls!() |> Enum.sort() |> Enum.reverse()
     pattern = name <> "_"
     ret = Enum.find(all_files, fn x -> File.dir?(x) and String.contains?(x, pattern) end)
@@ -83,12 +83,12 @@ defmodule MMDB2 do
       end)
       "./" <> ret <> "/#{name}.mmdb"
     else
-      download_geoLite("#{name}.tar.gz")
-      get_geoLite(name)
+      download_geoip_db("#{name}.tar.gz")
+      get_geoip_path(name)
     end
   end
 
-  def download_geoLite(file) do
+  def download_geoip_db(file) do
     tar = "./" <> file
     if File.exists?(tar) == false do
       url = "https://geolite.maxmind.com/download/geoip/database/#{file}"

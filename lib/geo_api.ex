@@ -29,4 +29,8 @@ defmodule GeoIP.API do
         {:error, exp}
     end
   end
+
+  def get_ipv6(_ip) do
+    {:error, :not_implemented}
+  end
 end
