@@ -1,4 +1,4 @@
-defmodule MMDB2 do
+defmodule MMDB2.Worker do
   import GunEx, only: [
     http_request: 6,
     get_body: 1
@@ -90,12 +90,17 @@ defmodule MMDB2 do
 
   def download_geoip_db(file) do
     tar = "./" <> file
-    if File.exists?(tar) == false do
+    if File.exists?(tar) == false or check_create_time(tar) == true do
       url = "https://geolite.maxmind.com/download/geoip/database/#{file}"
       bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
       File.write!(tar, bin, [:write, :binary])
     end
     :erl_tar.extract(tar, [:compressed])
-    File.rm!(tar)
+  end
+
+  def check_create_time(tar) do
+    c = (File.stat!(tar).ctime |> :calendar.datetime_to_gregorian_seconds) - 62167219200
+    ts_now = System.system_time(:second)
+    ts_now - c >= 24 * 3600
   end
 end

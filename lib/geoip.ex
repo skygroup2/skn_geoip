@@ -27,6 +27,7 @@ defmodule GeoIP do
     if info[:use_dir] == false do
       Logger.info("creating all mnesia table")
       Skn.Config.create_table()
+      GeoIP.Repo.create_table()
     end
     :mnesia.wait_for_tables([:skn_config], 600000)
   end
