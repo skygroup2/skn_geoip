@@ -24,12 +24,9 @@ defmodule MMDB2.Data do
   """
   def value(data, offset, options) when byte_size(data) > offset and offset >= 0 do
     <<_::binary-size(offset), rest::binary>> = data
-
     {value, _rest} = decode(rest, data, options)
-
     value
   end
-
   def value(_, _, _), do: nil
 
   defp decode(<<@binary::size(3), 0::size(5), part_rest::binary>>, _, _) do

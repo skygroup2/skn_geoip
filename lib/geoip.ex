@@ -42,7 +42,7 @@ defmodule GeoIP.Sup do
   end
 
   def init(_args) do
-    children = []
+    children = [worker(MMDB2.API, [])]
     supervise(children, strategy: :one_for_one)
   end
 end

@@ -1,29 +1,83 @@
 defmodule MMDB2.API do
+  use GenServer
+  require Logger
   import GunEx, only: [
     http_request: 6,
     get_body: 1
   ]
+  @name :mmdb2_api
+  @mmdb2_cache_db :mmdb2_cache_db
 
   def create_db() do
-
+    :ets.new(@mmdb2_cache_db, [:public, :named_table, {:read_concurrency, true}, {:write_concurrency, true}])
   end
 
-  def lookup(ip, meta, tree, data, options \\ []) do
-    options = Keyword.merge(MMDB2.File.default_options(), options)
+  def lookup(addr) do
+    GenServer.call(@name, {:lookup, format_ip_addr(addr)})
+  end
 
+  def start_link() do
+    GenServer.start_link(__MODULE__, [], name: @name)
+  end
+
+  def init(_args) do
+    Process.flag(:trap_exit, true)
+    Skn.Util.reset_timer(:check_tick, :check_tick, 20_000)
+    mmdb = get_geoip_path("GeoLite2-Country")
+    {:ok, meta, tree, data} = MMDB2.File.read_mmdb2(mmdb)
+    {:ok, %{meta: meta, tree: tree, data: data}}
+  end
+
+  def handle_call({:lookup, ip}, _from, %{meta: meta, tree: tree, data: data} = state) do
     case MMDB2.Tree.locate(ip, meta, tree) do
-      {:error, _} = error -> error
-      {:ok, pointer} -> {:ok, MMDB2.Data.value(data, pointer - meta.node_count - 16, options)}
+      {:ok, pointer} ->
+        options = MMDB2.File.default_options()
+        {:reply, {:ok, MMDB2.Data.value(data, pointer - meta.node_count - 16, options)}, state}
+      exp ->
+        {:reply, exp, state}
     end
   end
 
+  def handle_call(request, from, state) do
+    Logger.error "drop #{inspect request} from #{inspect from}"
+    {:reply, {:error, :badarg}, state}
+  end
 
+  def handle_cast(request, state) do
+    Logger.warn "drop #{inspect request}"
+    {:noreply, state}
+  end
+
+  def handle_info(:check_tick, state) do
+    {:noreply, state}
+  end
+
+  def handle_info(msg, state) do
+    Logger.debug "drop #{inspect msg}"
+    {:noreply, state}
+  end
+
+  def code_change(_vsn, state, _extra) do
+    {:ok, state}
+  end
+
+  def terminate(reason, _state) do
+    Logger.debug "stopped by #{inspect reason}"
+    :ok
+  end
+
+  defp format_ip_addr(addr) when is_binary(addr) do
+    format_ip_addr(to_charlist(addr))
+  end
+  defp format_ip_addr(addr) when is_list(addr) do
+    {:ok, addr} = :inet.parse_address(addr)
+    addr
+  end
+  defp format_ip_addr(addr) when is_tuple(addr) do
+    addr
+  end
 
   def import_mmdb2() do
-    cc = "GeoLite2-Country"
-    asn = "GeoLite2-ASN"
-    city = "GeoLite2-City"
-
   end
 
   # GeoLite2-Country, GeoLite2-ASN, GeoLite2-City
