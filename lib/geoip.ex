@@ -16,6 +16,7 @@ defmodule GeoIP do
 
   def mnesia_init do
     Skn.Counter.create_db()
+    MMDB2.API.create_db()
     info = :mnesia.system_info(:all)
     if info[:use_dir] == false  do
       Logger.info("no schema existed, create schema for #{node()}")

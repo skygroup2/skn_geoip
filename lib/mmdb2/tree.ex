@@ -20,16 +20,24 @@ defmodule MMDB2.Tree do
       0, node_count, record_size, tree)
   end
 
-  defp traverse(<<node_bit :: size(1), rest :: bitstring>>, node_x, node_count, record_size, tree) when node_x < node_count do
-    traverse(rest, read_node(node_x, node_bit, record_size, tree), node_count, record_size, tree)
+  def fold(0, _record_size, _tree, _data, acc, _fun) do
+    acc
   end
 
-  defp traverse(_, node_x, node_count, _, _) when node_x > node_count, do: {:ok, node_x}
-  defp traverse(_, node_x, node_count, _, _) when node_x == node_count, do: {:ok, 0}
-  defp traverse(_, node_x, node_count, _, _) when node_x < node_count, do: {:error, :node_below_count}
+  def fold(node_count, record_size, tree, data, acc, fun) do
 
-  defp read_node(node_x, index, record_size, tree) do
-    node_start = div(node_x * record_size, 4)
+  end
+
+  defp traverse(<<node_bit :: size(1), rest :: bitstring>>, offset, node_count, record_size, tree) when offset < node_count do
+    traverse(rest, read_node(offset, node_bit, record_size, tree), node_count, record_size, tree)
+  end
+
+  defp traverse(_, offset, node_count, _, _) when offset > node_count, do: {:ok, offset}
+  defp traverse(_, offset, node_count, _, _) when offset == node_count, do: {:ok, 0}
+  defp traverse(_, offset, node_count, _, _) when offset < node_count, do: {:error, :node_below_count}
+
+  defp read_node(offset, index, record_size, tree) do
+    node_start = div(offset * record_size, 4)
     node_len = div(record_size, 4)
     node_part = binary_part(tree, node_start, node_len)
     case index do
