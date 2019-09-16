@@ -36,7 +36,7 @@ end
 
 defmodule GeoIP.Sup do
   use Supervisor
-  @name  :void_sup
+  @name  :geoip_sup
   def start_link() do
     Supervisor.start_link(__MODULE__, [], name: @name)
   end
