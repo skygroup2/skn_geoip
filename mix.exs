@@ -25,8 +25,7 @@ defmodule SknGeoip.MixProject do
       {:logger_lager_backend, git: "https://github.com/gskynet/logger_lager_backend.git", branch: "master"},
       {:skn_lib, git: "git@gitlab.com:gskynet_lib/skn_lib.git", branch: "master"},
       {:skn_proto, git: "git@gitlab.com:gskynet_lib/skn_proto.git", branch: "master"},
-      {:lager, "~> 3.8", override: true},
-      {:distillery, "~> 2.1"},
+      {:lager, "~> 3.8", override: true}
     ]
   end
 end
