@@ -89,7 +89,7 @@ defmodule MMDB2.API do
       Enum.each(all_files, fn x ->
         if File.dir?(x) and String.contains?(x, pattern) and x != ret, do: File.rm!(x)
       end)
-      "./" <> ret <> "/#{name}.mmdb"
+      "/tmp/" <> ret <> "/#{name}.mmdb"
     else
       download_geoip_db("#{name}.tar.gz")
       get_geoip_path(name)
@@ -97,7 +97,7 @@ defmodule MMDB2.API do
   end
 
   def download_geoip_db(file) do
-    tar = "./" <> file
+    tar = "/tmp/" <> file
     if File.exists?(tar) == false or check_create_time(tar) == true do
       url = "https://geolite.maxmind.com/download/geoip/database/#{file}"
       bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
