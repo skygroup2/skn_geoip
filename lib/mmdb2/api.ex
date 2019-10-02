@@ -103,7 +103,7 @@ defmodule MMDB2.API do
       bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
       File.write!(tar, bin, [:write, :binary])
     end
-    :erl_tar.extract(tar, [:compressed])
+    :erl_tar.extract(tar, [:compressed, {:cwd, '/tmp'}])
   end
 
   def check_create_time(tar) do
