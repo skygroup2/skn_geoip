@@ -82,7 +82,7 @@ defmodule MMDB2.API do
 
   # GeoLite2-Country, GeoLite2-ASN, GeoLite2-City
   def get_geoip_path(name) do
-    all_files = File.ls!() |> Enum.sort() |> Enum.reverse()
+    all_files = File.ls!("/tmp/") |> Enum.sort() |> Enum.reverse()
     pattern = name <> "_"
     ret = Enum.find(all_files, fn x -> File.dir?(x) and String.contains?(x, pattern) end)
     if is_binary(ret) do
