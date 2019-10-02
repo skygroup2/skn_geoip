@@ -81,15 +81,17 @@ defmodule MMDB2.API do
   end
 
   # GeoLite2-Country, GeoLite2-ASN, GeoLite2-City
+  @mmdb2_dir "./.mmdb2"
   def get_geoip_path(name) do
-    all_files = File.ls!("/tmp/") |> Enum.sort() |> Enum.reverse()
+    if File.exists?(@mmdb2_dir) == false, do: File.mkdir(@mmdb2_dir)
+    all_files = File.ls!(@mmdb2_dir) |> Enum.sort() |> Enum.reverse()
     pattern = name <> "_"
-    ret = Enum.find(all_files, fn x -> File.dir?(x) and String.contains?(x, pattern) end)
+    ret = Enum.find(all_files, fn x -> File.dir?(@mmdb2_dir <> "/" <> x) and String.contains?(x, pattern) end)
     if is_binary(ret) do
       Enum.each(all_files, fn x ->
         if File.dir?(x) and String.contains?(x, pattern) and x != ret, do: File.rm!(x)
       end)
-      "/tmp/" <> ret <> "/#{name}.mmdb"
+      @mmdb2_dir <> "/" <> ret <> "/#{name}.mmdb"
     else
       download_geoip_db("#{name}.tar.gz")
       get_geoip_path(name)
@@ -97,13 +99,15 @@ defmodule MMDB2.API do
   end
 
   def download_geoip_db(file) do
-    tar = "/tmp/" <> file
+    tar = @mmdb2_dir <> "/" <> file
     if File.exists?(tar) == false or check_create_time(tar) == true do
+      Logger.info("Try to download #{file}")
       url = "https://geolite.maxmind.com/download/geoip/database/#{file}"
       bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
       File.write!(tar, bin, [:write, :binary])
+      Logger.info("Finished download #{file}")
     end
-    :erl_tar.extract(tar, [:compressed, {:cwd, '/tmp'}])
+    :erl_tar.extract(tar, [:compressed, {:cwd, to_charlist(@mmdb2_dir)}])
   end
 
   def check_create_time(tar) do
