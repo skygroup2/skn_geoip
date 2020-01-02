@@ -93,16 +93,16 @@ defmodule MMDB2.API do
       end)
       @mmdb2_dir <> "/" <> ret <> "/#{name}.mmdb"
     else
-      download_geoip_db("#{name}.tar.gz")
+      download_geoip_db(name)
       get_geoip_path(name)
     end
   end
 
   def download_geoip_db(file) do
-    tar = @mmdb2_dir <> "/" <> file
+    tar = @mmdb2_dir <> "/" <> file <> ".tar.gz"
     if File.exists?(tar) == false or check_create_time(tar) == true do
       Logger.info("Try to download #{file}")
-      url = "https://geolite.maxmind.com/download/geoip/database/#{file}"
+      url = "https://download.maxmind.com/app/geoip_download?edition_id=#{file}&license_key=xlwBl5KsfAS8fTCu&suffix=tar.gz"
       bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
       File.write!(tar, bin, [:write, :binary])
       Logger.info("Finished download #{file}")
