@@ -1,31 +1,34 @@
 defmodule MMDB2.API do
   use GenServer
   require Logger
-  import GunEx, only: [
-    http_request: 6,
-    get_body: 1
-  ]
-  @name :mmdb2_api
-  @mmdb2_cache_db :mmdb2_cache_db
 
-  def create_db() do
-    :ets.new(@mmdb2_cache_db, [:public, :named_table, {:read_concurrency, true}, {:write_concurrency, true}])
+  def size() do
+    4
+  end
+
+  def name(id) do
+    String.to_atom("mmdb2_api#{rem(id, size())}")
+  end
+
+  def round_robin() do
+    name(Skn.Counter.update_counter(:lookup_seq, 1))
   end
 
   def lookup(addr) do
-    GenServer.call(@name, {:lookup, format_ip_addr(addr)})
+    GenServer.call(round_robin(), {:lookup, format_ip_addr(addr)})
   end
 
-  def start_link() do
-    GenServer.start_link(__MODULE__, [], name: @name)
+  def start_link(id) do
+    GenServer.start_link(__MODULE__, id, name: name(id))
   end
 
-  def init(_args) do
+  def init(id) do
     Process.flag(:trap_exit, true)
     Skn.Util.reset_timer(:check_tick, :check_tick, 20_000)
-    mmdb = get_geoip_path("GeoLite2-Country")
+    MMDB2.Updater.wait_for_ready()
+    mmdb = MMDB2.Updater.get_geoip_path("GeoLite2-Country")
     {:ok, meta, tree, data} = MMDB2.File.read_mmdb2(mmdb)
-    {:ok, %{meta: meta, tree: tree, data: data}}
+    {:ok, %{id: id, meta: meta, tree: tree, data: data}}
   end
 
   def handle_call({:lookup, ip}, _from, %{meta: meta, tree: tree, data: data} = state) do
@@ -69,50 +72,13 @@ defmodule MMDB2.API do
   defp format_ip_addr(addr) when is_binary(addr) do
     format_ip_addr(to_charlist(addr))
   end
+
   defp format_ip_addr(addr) when is_list(addr) do
     {:ok, addr} = :inet.parse_address(addr)
     addr
   end
+
   defp format_ip_addr(addr) when is_tuple(addr) do
     addr
-  end
-
-  def import_mmdb2() do
-  end
-
-  # GeoLite2-Country, GeoLite2-ASN, GeoLite2-City
-  @mmdb2_dir "./.mmdb2"
-  def get_geoip_path(name) do
-    if File.exists?(@mmdb2_dir) == false, do: File.mkdir(@mmdb2_dir)
-    all_files = File.ls!(@mmdb2_dir) |> Enum.sort() |> Enum.reverse()
-    pattern = name <> "_"
-    ret = Enum.find(all_files, fn x -> File.dir?(@mmdb2_dir <> "/" <> x) and String.contains?(x, pattern) end)
-    if is_binary(ret) do
-      Enum.each(all_files, fn x ->
-        if File.dir?(x) and String.contains?(x, pattern) and x != ret, do: File.rm!(x)
-      end)
-      @mmdb2_dir <> "/" <> ret <> "/#{name}.mmdb"
-    else
-      download_geoip_db(name)
-      get_geoip_path(name)
-    end
-  end
-
-  def download_geoip_db(file) do
-    tar = @mmdb2_dir <> "/" <> file <> ".tar.gz"
-    if File.exists?(tar) == false or check_create_time(tar) == true do
-      Logger.info("Try to download #{file}")
-      url = "https://download.maxmind.com/app/geoip_download?edition_id=#{file}&license_key=xlwBl5KsfAS8fTCu&suffix=tar.gz"
-      bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
-      File.write!(tar, bin, [:write, :binary])
-      Logger.info("Finished download #{file}")
-    end
-    :erl_tar.extract(tar, [:compressed, {:cwd, to_charlist(@mmdb2_dir)}])
-  end
-
-  def check_create_time(tar) do
-    c = (File.stat!(tar).ctime |> :calendar.datetime_to_gregorian_seconds) - 62167219200
-    ts_now = System.system_time(:second)
-    ts_now - c >= 24 * 3600
   end
 end
