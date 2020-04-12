@@ -15,8 +15,8 @@ defmodule MMDB2.Updater do
     GenServer.call(@name, {:sync_run, fun}, :infinity)
   end
 
-  def start_link() do
-    GenServer.start_link(__MODULE__, [], name: @name)
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: @name)
   end
 
   def init(_args) do

@@ -42,14 +42,14 @@ defmodule GeoIP.Sup do
   end
 
   def init(_args) do
-    children = [worker(MMDB2.Updater, [])]
-    supervise(children, strategy: :one_for_one)
+    children = [MMDB2.Updater]
+    Supervisor.init(children, strategy: :one_for_one)
   end
 
   def start_api_worker() do
     Enum.each(0..(MMDB2.API.size() - 1), fn x ->
-      opts = [id: {:mmdb2_api, x}, function: :start_link, restart: :transient, shutdown: 5000, modules: [MMDB2.API]]
-      {:ok, _pid} = Supervisor.start_child(:geoip_sup, worker(MMDB2.API, [x], opts))
+      spec = Supervisor.child_spec({MMDB2.API, x}, [id: {:mmdb2_api, x}])
+      {:ok, _pid} = Supervisor.start_child(:geoip_sup, spec)
     end)
   end
 end
