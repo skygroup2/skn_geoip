@@ -5,9 +5,12 @@ defmodule SknGeoip.MixProject do
     [
       app: :skn_geoip,
       version: "0.1.0",
-      elixir: "~> 1.8",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+      ]
     ]
   end
 
@@ -25,7 +28,9 @@ defmodule SknGeoip.MixProject do
       {:logger_lager_backend, git: "https://github.com/Subhuti20/logger_lager_backend.git", branch: "master"},
       {:skn_lib, git: "git@gitlab.com:gskynet_lib/skn_lib.git", branch: "master"},
       {:skn_proto, git: "git@gitlab.com:gskynet_lib/skn_proto.git", branch: "master"},
-      {:lager, "~> 3.8", override: true}
+      {:lager, "~> 3.8", override: true},
+      {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
     ]
   end
 end

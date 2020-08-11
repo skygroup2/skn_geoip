@@ -1,4 +1,7 @@
 defmodule MMDB2.API do
+  @moduledoc """
+    scalable worker for query GeoIP
+  """
   use GenServer
   require Logger
 

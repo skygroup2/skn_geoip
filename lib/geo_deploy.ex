@@ -1,9 +1,20 @@
-defmodule GeoIP.API do
+defmodule GeoIP.Deploy do
+  @moduledoc """
+    provide some api for working with geo
+  """
   require Logger
   import GunEx, only: [
     http_request: 6,
     decode_gzip: 1
   ]
+
+  def get_db_dir do
+    Skn.Config.get(:mmdb_dir, "./mmdb2")
+  end
+
+  def set_db_dir(path) do
+    Skn.Config.set(:mmdb_dir, path)
+  end
 
   def get_ipv4(ip) do
     url = "http://lumtest.com/myip.json"

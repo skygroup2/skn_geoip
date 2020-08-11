@@ -1,5 +1,7 @@
 defmodule MMDB2.File do
-
+  @moduledoc """
+    provide api for read/write MMDB
+  """
   def default_options, do: [double_precision: nil, float_precision: nil, map_keys: :strings]
 
   def read_mmdb2(file) do

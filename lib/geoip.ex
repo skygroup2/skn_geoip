@@ -1,11 +1,13 @@
 defmodule GeoIP do
+  @moduledoc """
+    application for geolocation
+  """
   use Application
   require Logger
 
   def start(_type, _args) do
     :rand.seed :exs64, :os.timestamp
     Application.ensure_all_started(:lager)
-    Application.ensure_all_started(:ssh)
     Application.ensure_all_started(:gun)
     Logger.add_backend(LoggerLagerBackend)
     mnesia_init()
@@ -30,11 +32,12 @@ defmodule GeoIP do
       Skn.Config.create_table()
       GeoIP.Repo.create_table()
     end
-    :mnesia.wait_for_tables([:skn_config], 600000)
+    :mnesia.wait_for_tables([:skn_config], 600_000)
   end
 end
 
 defmodule GeoIP.Sup do
+  @moduledoc false
   use Supervisor
   @name  :geoip_sup
   def start_link() do

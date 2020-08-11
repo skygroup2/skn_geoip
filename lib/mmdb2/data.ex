@@ -1,4 +1,7 @@
 defmodule MMDB2.Data do
+  @moduledoc """
+    provide api for encode /decode MMDB
+  """
   # standard data types
   @binary 2
   @bytes 4
@@ -211,7 +214,6 @@ defmodule MMDB2.Data do
 
   defp maybe_round_float(value, nil), do: value
   defp maybe_round_float(value, precision), do: Float.round(value, precision)
-
 
   def encode(value) when is_binary(value), do: encode(:binary, value)
   def encode(value) when is_boolean(value), do: encode(:boolean, value)

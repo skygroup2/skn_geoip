@@ -1,4 +1,7 @@
 defmodule MMDB2.Tree do
+  @moduledoc """
+    api for traverse mmdb tree for looking geoip
+  """
   use Bitwise
 
   def locate({a, b, c, d}, %{ip_version: 6, node_count: node_count, record_size: record_size}, tree) do
@@ -16,8 +19,8 @@ defmodule MMDB2.Tree do
   def locate({_, _, _, _, _, _, _, _}, %{ip_version: 4}, _), do: {:ok, 0}
 
   def locate({a, b, c, d, e, f, g, h}, %{node_count: node_count, record_size: record_size}, tree) do
-    traverse(<<a :: size(16), b :: size(16), c :: size(16), d :: size(16), e :: size(16), f :: size(16), g :: size(16), h :: size(16)>>,
-      0, node_count, record_size, tree)
+    traverse(<<a :: size(16), b :: size(16), c :: size(16), d :: size(16),
+      e :: size(16), f :: size(16), g :: size(16), h :: size(16)>>, 0, node_count, record_size, tree)
   end
 
 #  def fold(0, _record_size, _tree, _data, acc, _fun) do

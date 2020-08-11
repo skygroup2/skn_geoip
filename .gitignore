@@ -22,8 +22,8 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 skn_geoip-*.tar
 
-GeoLite2-Country*
+/.mmdb2
 
-GeoLite2-ASN*
+Mnesia.*
 
-GeoLite2-City*
+/log/

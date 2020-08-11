@@ -1,4 +1,7 @@
 defmodule MMDB2.Updater do
+  @moduledoc """
+    periodic updating free mmdb2
+  """
   use GenServer
   require Logger
   import GunEx, only: [
@@ -49,16 +52,14 @@ defmodule MMDB2.Updater do
   end
 
   def handle_info(:check_update, state) do
-    try do
-      _ = get_geoip_path("GeoLite2-Country")
-      Enum.each(state.waiter, fn x -> GenServer.reply(x, true) end)
-      {:noreply, %{ready: true, waiter: []}}
-    catch
-      _, exp ->
-        Logger.error("check_update error #{inspect exp}/ #{inspect __STACKTRACE__}")
-        Skn.Util.reset_timer(:check_update, :check_update, 60_000)
-        {:noreply, state}
-    end
+    _ = get_geoip_path("GeoLite2-Country")
+    Enum.each(state.waiter, fn x -> GenServer.reply(x, true) end)
+    {:noreply, %{ready: true, waiter: []}}
+  catch
+    _, exp ->
+      Logger.error("check_update error #{inspect exp}/ #{inspect __STACKTRACE__}")
+      Skn.Util.reset_timer(:check_update, :check_update, 60_000)
+      {:noreply, state}
   end
 
   def handle_info(msg, state) do
@@ -107,9 +108,8 @@ defmodule MMDB2.Updater do
   end
 
   def check_create_time(tar) do
-    c = (File.stat!(tar).ctime |> :calendar.datetime_to_gregorian_seconds) - 62167219200
+    c = (File.stat!(tar).ctime |> :calendar.datetime_to_gregorian_seconds) - 62_167_219_200
     ts_now = System.system_time(:second)
     ts_now - c >= 24 * 3600
   end
-
 end
