@@ -11,9 +11,8 @@ defmodule GeoIP do
     Application.ensure_all_started(:gun)
     Logger.add_backend(LoggerLagerBackend)
     mnesia_init()
-
+    GeoIP.Deploy.check_set_license()
     ret = GeoIP.Sup.start_link()
-    GeoIP.Sup.start_api_worker()
     ret
   end
 
@@ -45,14 +44,9 @@ defmodule GeoIP.Sup do
   end
 
   def init(_args) do
-    children = [MMDB2.Updater]
-    Supervisor.init(children, strategy: :one_for_one)
-  end
-
-  def start_api_worker() do
-    Enum.each(0..(MMDB2.API.size() - 1), fn x ->
-      spec = Supervisor.child_spec({MMDB2.API, x}, [id: {:mmdb2_api, x}])
-      {:ok, _pid} = Supervisor.start_child(:geoip_sup, spec)
+    children = Enum.map(0..(MMDB2.API.worker_size() - 1), fn id ->
+      Supervisor.child_spec({MMDB2.API, id}, id: MMDB2.API.worker_name(id), restart: :transient, shutdown: 5000)
     end)
+    Supervisor.init([MMDB2.Updater| children], strategy: :one_for_one)
   end
 end

@@ -4,17 +4,11 @@ defmodule MMDB2.API do
   """
   use GenServer
   require Logger
-
-  def size() do
-    4
-  end
-
-  def name(id) do
-    String.to_atom("mmdb2_api#{rem(id, size())}")
-  end
+  @worker_size 8
 
   def round_robin() do
-    name(Skn.Counter.update_counter(:lookup_seq, 1))
+    seq = Skn.Counter.update_counter(:lookup_seq, 1) |> rem(@worker_size)
+    worker_name(seq)
   end
 
   def lookup(addr) do
@@ -22,7 +16,7 @@ defmodule MMDB2.API do
   end
 
   def start_link(id) do
-    GenServer.start_link(__MODULE__, id, name: name(id))
+    GenServer.start_link(__MODULE__, id, name: worker_name(id))
   end
 
   def init(id) do
@@ -84,4 +78,11 @@ defmodule MMDB2.API do
   defp format_ip_addr(addr) when is_tuple(addr) do
     addr
   end
+
+  Enum.each(0..(@worker_size - 1), fn x ->
+    name = String.to_atom("proxy_static#{x}")
+    def worker_name(unquote(x)), do: unquote(name)
+  end)
+
+  def worker_size(), do: @worker_size
 end

@@ -27,3 +27,5 @@ skn_geoip-*.tar
 Mnesia.*
 
 /log/
+
+/priv/plts

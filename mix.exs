@@ -18,7 +18,7 @@ defmodule SknGeoip.MixProject do
   def application do
     [
       mod: {GeoIP, []},
-      extra_applications: [:mnesia, :logger, :logger_lager_backend, :ssh, :gun]
+      extra_applications: [:mnesia, :lager, :logger, :logger_lager_backend, :ssh, :gun]
     ]
   end
 

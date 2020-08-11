@@ -16,6 +16,21 @@ defmodule GeoIP.Deploy do
     Skn.Config.set(:mmdb_dir, path)
   end
 
+  def get_license do
+    Skn.Config.get(:mmdb_lic, "xlwBl5KsfAS8fTCu")
+  end
+
+  def set_license(lic) do
+    Skn.Config.set(:mmdb_lic, lic)
+  end
+
+  def check_set_license do
+    lic = System.get_env("MAXMIND_LICENSE")
+    if lic != nil do
+      set_license(lic)
+    end
+  end
+
   def get_ipv4(ip) do
     url = "http://lumtest.com/myip.json"
     headers = %{
