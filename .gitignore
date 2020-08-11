@@ -29,3 +29,5 @@ Mnesia.*
 /log/
 
 /priv/plts
+
+/.idea
