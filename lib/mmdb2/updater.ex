@@ -8,14 +8,13 @@ defmodule MMDB2.Updater do
     http_request: 6,
     get_body: 1
   ]
-  @name :mmdb2_updater
+  import Skn.Util, only: [
+    reset_timer: 3
+  ]
+  @name :mmdb_updater
 
-  def wait_for_ready() do
-    GenServer.call(@name, :wait_for_ready, :infinity)
-  end
-
-  def sync_run(fun) do
-    GenServer.call(@name, {:sync_run, fun}, :infinity)
+  def get_mmdb() do
+    GenServer.call(@name, :get_mmdb, :infinity)
   end
 
   def start_link(args) do
@@ -25,19 +24,14 @@ defmodule MMDB2.Updater do
   def init(_args) do
     Process.flag(:trap_exit, true)
     send(self(), :check_update)
-    {:ok, %{ready: false, waiter: []}}
+    {:ok, %{mmdb: nil, waiter: [], version: GeoIP.Deploy.get_version()}}
   end
 
-  def handle_call({:sync_run, fun}, _from, state) when is_function(fun) do
-    ret = fun.()
-    {:reply, ret, state}
-  end
-
-  def handle_call(:wait_for_ready, from, %{ready: ready, waiter: waiter} = state) do
-    if ready == true do
-      {:reply, true, state}
-    else
+  def handle_call(:get_mmdb, from, %{mmdb: mmdb, version: version, waiter: waiter} = state) do
+    if mmdb == nil do
       {:noreply, %{state| waiter: [from| waiter]}}
+    else
+      {:reply, {mmdb, version}, state}
     end
   end
 
@@ -52,13 +46,15 @@ defmodule MMDB2.Updater do
   end
 
   def handle_info(:check_update, state) do
-    _ = get_geoip_path("GeoLite2-Country")
-    Enum.each(state.waiter, fn x -> GenServer.reply(x, true) end)
-    {:noreply, %{ready: true, waiter: []}}
+    {mmdb, version} = get_geoip_path("GeoLite2-Country")
+    GeoIP.Deploy.set_version(version)
+    Enum.each(state.waiter, fn x -> GenServer.reply(x, {mmdb, version}) end)
+    reset_timer(:check_update, :check_update, 1200_000)
+    {:noreply, %{mmdb: mmdb, version: version, waiter: []}}
   catch
     _, exp ->
       Logger.error("check_update error #{inspect exp}/ #{inspect __STACKTRACE__}")
-      Skn.Util.reset_timer(:check_update, :check_update, 60_000)
+      reset_timer(:check_update, :check_update, 20_000)
       {:noreply, state}
   end
 
@@ -77,39 +73,62 @@ defmodule MMDB2.Updater do
   end
 
   # GeoLite2-Country, GeoLite2-ASN, GeoLite2-City
-  @mmdb2_dir "./.mmdb2"
   def get_geoip_path(name) do
-    if File.exists?(@mmdb2_dir) == false, do: File.mkdir(@mmdb2_dir)
-    all_files = File.ls!(@mmdb2_dir) |> Enum.sort() |> Enum.reverse()
+    db_dir = GeoIP.Deploy.get_db_dir()
+    check_create_dir(db_dir)
+    # filter real db dir
     pattern = name <> "_"
-    ret = Enum.find(all_files, fn x -> File.dir?(@mmdb2_dir <> "/" <> x) and String.contains?(x, pattern) end)
-    if is_binary(ret) do
-      Enum.each(all_files, fn x ->
-        if File.dir?(x) and String.contains?(x, pattern) and x != ret, do: File.rm!(x)
-      end)
-      @mmdb2_dir <> "/" <> ret <> "/#{name}.mmdb"
-    else
-      download_geoip_db(name)
-      get_geoip_path(name)
+    pz = byte_size(pattern)
+    tar =  db_dir <> "/" <> name <> ".tar.gz"
+    mmdb_dir = File.ls!(db_dir)
+    |> Enum.filter(fn x -> File.dir?(db_dir <> "/" <> x) and String.contains?(x, pattern) end)
+    |> Enum.sort() |> Enum.reverse()
+    case mmdb_dir do
+      [<<_ :: binary-size(pz), yy :: binary-size(4), mm :: binary-size(2), dd :: binary-size(2)>> = v| remain] ->
+        clean_old_db(remain)
+        release_date = Date.from_iso8601!(Enum.join([yy, mm, dd], "-"))
+        today = Date.utc_today()
+        if Date.diff(today, release_date) >= 7 and check_create_time(tar) do
+          download_and_extract_db(db_dir, name)
+          get_geoip_path(name)
+        else
+          Logger.info("Using #{v}")
+          {db_dir <> "/" <> v <> "/#{name}.mmdb", release_date}
+        end
+      [] ->
+        download_and_extract_db(db_dir, name)
+        get_geoip_path(name)
     end
   end
 
-  def download_geoip_db(file) do
-    tar = @mmdb2_dir <> "/" <> file <> ".tar.gz"
-    if File.exists?(tar) == false or check_create_time(tar) == true do
-      maxmind_license = Skn.Config.get(:maxmind_license, System.get_env("MAXMIND_LICENSE", "xlwBl5KsfAS8fTCu"))
-      Logger.info("Try to download #{file} : #{maxmind_license}")
-      url = "https://download.maxmind.com/app/geoip_download?edition_id=#{file}&license_key=#{maxmind_license}&suffix=tar.gz"
-      bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
-      File.write!(tar, bin, [:write, :binary])
-      Logger.info("Finished download #{file}")
+  def download_and_extract_db(db_dir, file) do
+    tar = db_dir <> "/" <> file <> ".tar.gz"
+    maxmind_license = GeoIP.Deploy.get_license()
+    Logger.info("Try to download #{file} : #{maxmind_license}")
+    url = "https://download.maxmind.com/app/geoip_download?edition_id=#{file}&license_key=#{maxmind_license}&suffix=tar.gz"
+    bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
+    File.write!(tar, bin, [:write, :binary])
+    Logger.info("Finished download #{file}")
+    :erl_tar.extract(tar, [:compressed, {:cwd, to_charlist(db_dir)}])
+  end
+
+  def clean_old_db(remain) do
+    rz = length(remain)
+    if rz > 2 do
+      Enum.slice(remain, 2, rz - 2)
+      |> Enum.each(fn x -> File.rm!(x) end)
+    else
+      :ok
     end
-    :erl_tar.extract(tar, [:compressed, {:cwd, to_charlist(@mmdb2_dir)}])
+  end
+
+  def check_create_dir(db_dir) do
+    if File.exists?(db_dir) == false, do: File.mkdir(db_dir)
   end
 
   def check_create_time(tar) do
     c = (File.stat!(tar).ctime |> :calendar.datetime_to_gregorian_seconds) - 62_167_219_200
     ts_now = System.system_time(:second)
-    ts_now - c >= 24 * 3600
+    ts_now - c >= 2 * 3600
   end
 end

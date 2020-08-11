@@ -4,6 +4,9 @@ defmodule MMDB2.API do
   """
   use GenServer
   require Logger
+  import Skn.Util, only: [
+    reset_timer: 3
+  ]
   @worker_size 8
 
   def round_robin() do
@@ -21,11 +24,10 @@ defmodule MMDB2.API do
 
   def init(id) do
     Process.flag(:trap_exit, true)
-    Skn.Util.reset_timer(:check_tick, :check_tick, 20_000)
-    MMDB2.Updater.wait_for_ready()
-    mmdb = MMDB2.Updater.get_geoip_path("GeoLite2-Country")
+    {mmdb, version} = MMDB2.Updater.get_mmdb()
     {:ok, meta, tree, data} = MMDB2.File.read_mmdb2(mmdb)
-    {:ok, %{id: id, meta: meta, tree: tree, data: data}}
+    reset_timer(:reload_db, :reload_db, 120_000)
+    {:ok, %{id: id, meta: meta, tree: tree, data: data, version: version}}
   end
 
   def handle_call({:lookup, ip}, _from, %{meta: meta, tree: tree, data: data} = state) do
@@ -48,8 +50,16 @@ defmodule MMDB2.API do
     {:noreply, state}
   end
 
-  def handle_info(:check_tick, state) do
-    {:noreply, state}
+  def handle_info(:reload_db, %{version: version} = state) do
+    # check read new db
+    reset_timer(:reload_db, :reload_db, 1200_000)
+    if GeoIP.Deploy.get_version() != version do
+      {mmdb, version} = MMDB2.Updater.get_mmdb()
+      {:ok, meta, tree, data} = MMDB2.File.read_mmdb2(mmdb)
+      {:noreply, %{state| meta: meta, tree: tree, data: data, version: version}}
+    else
+      {:noreply, state}
+    end
   end
 
   def handle_info(msg, state) do

@@ -9,11 +9,19 @@ defmodule GeoIP.Deploy do
   ]
 
   def get_db_dir do
-    Skn.Config.get(:mmdb_dir, "./mmdb2")
+    Skn.Config.get(:mmdb_dir, "./.mmdb2")
   end
 
   def set_db_dir(path) do
     Skn.Config.set(:mmdb_dir, path)
+  end
+
+  def get_version do
+    Skn.Config.get(:mmdb_version, ~D[2020-01-01])
+  end
+
+  def set_version(version) do
+    Skn.Config.set(:mmdb_version, version)
   end
 
   def get_license do
