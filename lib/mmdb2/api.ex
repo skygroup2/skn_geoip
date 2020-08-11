@@ -52,7 +52,7 @@ defmodule MMDB2.API do
 
   def handle_info(:reload_db, %{version: version} = state) do
     # check read new db
-    reset_timer(:reload_db, :reload_db, 1200_000)
+    reset_timer(:reload_db, :reload_db, 120_000)
     if GeoIP.Deploy.get_version() != version do
       {mmdb, version} = MMDB2.Updater.get_mmdb()
       {:ok, meta, tree, data} = MMDB2.File.read_mmdb2(mmdb)
@@ -90,7 +90,7 @@ defmodule MMDB2.API do
   end
 
   Enum.each(0..(@worker_size - 1), fn x ->
-    name = String.to_atom("proxy_static#{x}")
+    name = String.to_atom("mmdb_api#{x}")
     def worker_name(unquote(x)), do: unquote(name)
   end)
 
