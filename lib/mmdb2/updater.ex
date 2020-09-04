@@ -85,7 +85,7 @@ defmodule MMDB2.Updater do
     |> Enum.sort() |> Enum.reverse()
     case mmdb_dir do
       [<<_ :: binary-size(pz), yy :: binary-size(4), mm :: binary-size(2), dd :: binary-size(2)>> = v| remain] ->
-        clean_old_db(remain)
+        clean_old_db(db_dir, remain)
         release_date = Date.from_iso8601!(Enum.join([yy, mm, dd], "-"))
         today = Date.utc_today()
         if Date.diff(today, release_date) >= 7 and check_create_time(tar) do
@@ -112,11 +112,11 @@ defmodule MMDB2.Updater do
     :erl_tar.extract(tar, [:compressed, {:cwd, to_charlist(db_dir)}])
   end
 
-  def clean_old_db(remain) do
+  def clean_old_db(db_dir, remain) do
     rz = length(remain)
     if rz > 2 do
       Enum.slice(remain, 2, rz - 2)
-      |> Enum.each(fn x -> File.rm!(x) end)
+      |> Enum.each(fn x -> File.rm!(db_dir <> "/" <> x) end)
     else
       :ok
     end
