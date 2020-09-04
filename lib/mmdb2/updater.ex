@@ -116,7 +116,7 @@ defmodule MMDB2.Updater do
     rz = length(remain)
     if rz > 2 do
       Enum.slice(remain, 2, rz - 2)
-      |> Enum.each(fn x -> File.rm!(db_dir <> "/" <> x) end)
+      |> Enum.each(fn x -> File.rmdir!(db_dir <> "/" <> x) end)
     else
       :ok
     end
