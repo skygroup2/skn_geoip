@@ -49,7 +49,7 @@ defmodule MMDB2.Updater do
     {mmdb, version} = get_geoip_path("GeoLite2-Country")
     GeoIP.Deploy.set_version(version)
     Enum.each(state.waiter, fn x -> GenServer.reply(x, {mmdb, version}) end)
-    reset_timer(:check_update, :check_update, 1200_000)
+    reset_timer(:check_update, :check_update, Skn.Config.get(:check_update_mmdb, 7_200_000))
     {:noreply, %{mmdb: mmdb, version: version, waiter: []}}
   catch
     _, exp ->
