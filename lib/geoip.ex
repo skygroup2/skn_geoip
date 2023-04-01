@@ -7,11 +7,9 @@ defmodule GeoIP do
 
   def start(_type, _args) do
     :rand.seed :exs64, :os.timestamp
-    Application.ensure_all_started(:lager)
-    Application.ensure_all_started(:gun)
-    Logger.add_backend(LoggerLagerBackend)
+    :logger.add_handlers(:skn_geoip)
     mnesia_init()
-    GeoIP.Deploy.check_set_license()
+    GeoIP.Config.check_set_license()
     ret = GeoIP.Sup.start_link()
     ret
   end
@@ -29,7 +27,6 @@ defmodule GeoIP do
     if info[:use_dir] == false do
       Logger.info("creating all mnesia table")
       Skn.Config.create_table()
-      GeoIP.Repo.create_table()
     end
     :mnesia.wait_for_tables([:skn_config], 600_000)
   end

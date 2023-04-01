@@ -1,6 +1,6 @@
 # This file is responsible for configuring your application
 # and its dependencies with the aid of the Mix.Config module.
-use Mix.Config
+import Config
 
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
@@ -10,7 +10,7 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :skn_void, key: :value
+#     config :skn_geoip, key: :value
 #
 # and access this configuration in your application as:
 #
@@ -29,18 +29,3 @@ use Mix.Config
 #
 #     import_config "#{Mix.env()}.exs"
 import_config "#{Mix.env()}.exs"
-
-config :lager,
-  log_root: :os.getenv('LAGER_LOG_DIR', '#{File.cwd!()}/log'),
-  crash_log: '#{node()}_crash.log',
-  handlers: [
-    {:lager_file_backend,
-     [{:file, '#{node()}.log'}, {:level, :debug}, {:size, 104_857_600}, {:date, '$D0'}]}
-  ]
-
-config :logger,
-  backends: [:console, LoggerLagerBackend],
-  handle_otp_reports: true,
-  level: :debug
-
-config :ssl, protocol_version: :"tlsv1.2"

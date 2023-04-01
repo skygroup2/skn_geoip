@@ -24,7 +24,7 @@ defmodule MMDB2.Updater do
   def init(_args) do
     Process.flag(:trap_exit, true)
     send(self(), :check_update)
-    {:ok, %{mmdb: nil, waiter: [], version: GeoIP.Deploy.get_version()}}
+    {:ok, %{mmdb: nil, waiter: [], version: GeoIP.Config.get_version()}}
   end
 
   def handle_call(:get_mmdb, from, %{mmdb: mmdb, version: version, waiter: waiter} = state) do
@@ -47,7 +47,7 @@ defmodule MMDB2.Updater do
 
   def handle_info(:check_update, state) do
     {mmdb, version} = get_geoip_path("GeoLite2-Country")
-    GeoIP.Deploy.set_version(version)
+    GeoIP.Config.set_version(version)
     Enum.each(state.waiter, fn x -> GenServer.reply(x, {mmdb, version}) end)
     reset_timer(:check_update, :check_update, Skn.Config.get(:check_update_mmdb, 7_200_000))
     {:noreply, %{mmdb: mmdb, version: version, waiter: []}}
@@ -74,7 +74,7 @@ defmodule MMDB2.Updater do
 
   # GeoLite2-Country, GeoLite2-ASN, GeoLite2-City
   def get_geoip_path(name) do
-    db_dir = GeoIP.Deploy.get_db_dir()
+    db_dir = GeoIP.Config.get_db_dir()
     check_create_dir(db_dir)
     # filter real db dir
     pattern = name <> "_"
@@ -103,7 +103,7 @@ defmodule MMDB2.Updater do
 
   def download_and_extract_db(db_dir, file) do
     tar = db_dir <> "/" <> file <> ".tar.gz"
-    maxmind_license = GeoIP.Deploy.get_license()
+    maxmind_license = GeoIP.Config.get_license()
     Logger.info("Try to download #{file} : #{maxmind_license}")
     url = "https://download.maxmind.com/app/geoip_download?edition_id=#{file}&license_key=#{maxmind_license}&suffix=tar.gz"
     bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
@@ -113,9 +113,9 @@ defmodule MMDB2.Updater do
   end
 
   def clean_old_db(db_dir, remain) do
-    rz = length(remain)
-    if rz > 2 do
-      Enum.slice(remain, 2, rz - 2)
+    remain_size = length(remain)
+    if remain_size > 2 do
+      Enum.slice(remain, 2, remain_size - 2)
       |> Enum.each(fn x -> File.rm_rf!(db_dir <> "/" <> x) end)
     else
       :ok

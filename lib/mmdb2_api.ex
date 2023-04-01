@@ -25,16 +25,15 @@ defmodule MMDB2.API do
   def init(id) do
     Process.flag(:trap_exit, true)
     {mmdb, version} = MMDB2.Updater.get_mmdb()
-    {:ok, meta, tree, data} = MMDB2.File.read_mmdb2(mmdb)
+    {:ok, meta, tree, data} = read_mmdb2(mmdb)
     reset_timer(:reload_db, :reload_db, 120_000)
     {:ok, %{id: id, meta: meta, tree: tree, data: data, version: version}}
   end
 
   def handle_call({:lookup, ip}, _from, %{meta: meta, tree: tree, data: data} = state) do
-    case MMDB2.Tree.locate(ip, meta, tree) do
-      {:ok, pointer} ->
-        options = MMDB2.File.default_options()
-        {:reply, {:ok, MMDB2.Data.value(data, pointer - meta.node_count - 16, options)}, state}
+    case MMDB2Decoder.lookup(ip, meta, tree, data) do
+      {:ok, value} ->
+        {:reply, {:ok, value}, state}
       exp ->
         {:reply, exp, state}
     end
@@ -53,9 +52,9 @@ defmodule MMDB2.API do
   def handle_info(:reload_db, %{version: version} = state) do
     # check read new db
     reset_timer(:reload_db, :reload_db, 120_000)
-    if GeoIP.Deploy.get_version() != version do
+    if GeoIP.Config.get_version() != version do
       {mmdb, version} = MMDB2.Updater.get_mmdb()
-      {:ok, meta, tree, data} = MMDB2.File.read_mmdb2(mmdb)
+      {:ok, meta, tree, data} = read_mmdb2(mmdb)
       {:noreply, %{state| meta: meta, tree: tree, data: data, version: version}}
     else
       {:noreply, state}
@@ -74,6 +73,11 @@ defmodule MMDB2.API do
   def terminate(reason, _state) do
     Logger.debug "stopped by #{inspect reason}"
     :ok
+  end
+
+  def read_mmdb2(filename) do
+    database = File.read!(filename)
+    MMDB2Decoder.parse_database(database)
   end
 
   defp format_ip_addr(addr) when is_binary(addr) do
