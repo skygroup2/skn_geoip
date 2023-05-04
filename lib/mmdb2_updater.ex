@@ -4,10 +4,6 @@ defmodule MMDB2.Updater do
   """
   use GenServer
   require Logger
-  import GunEx, only: [
-    http_request: 6,
-    get_body: 1
-  ]
   import Skn.Util, only: [
     reset_timer: 3
   ]
@@ -101,12 +97,17 @@ defmodule MMDB2.Updater do
     end
   end
 
+  defp default_gun_option, do: Gun.default_option(25_000, 90_000)
+  defp make_request(method, url, headers, body) do
+    HttpEx.request("GEO", method, url, headers, body, default_gun_option(), 0, [], nil)
+  end
+
   def download_and_extract_db(db_dir, file) do
     tar = db_dir <> "/" <> file <> ".tar.gz"
     maxmind_license = GeoIP.Config.get_license()
     Logger.info("Try to download #{file} : #{maxmind_license}")
     url = "https://download.maxmind.com/app/geoip_download?edition_id=#{file}&license_key=#{maxmind_license}&suffix=tar.gz"
-    bin = http_request("GET", url, %{}, "", GunEx.default_option(), nil) |> get_body()
+    bin = make_request("GET", url, %{}, "") |> Map.fetch!(:body)
     File.write!(tar, bin, [:write, :binary])
     Logger.info("Finished download #{file}")
     :erl_tar.extract(tar, [:compressed, {:cwd, to_charlist(db_dir)}])

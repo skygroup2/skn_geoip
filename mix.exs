@@ -34,12 +34,12 @@ defmodule SknGeoip.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:skn_lib, git: "git@gitlab.com:gskynet_lib/skn_lib.git", branch: "master"},
-      {:skn_proto, git: "git@gitlab.com:gskynet_lib/skn_proto.git", branch: "master"},
+      {:skn_lib, git: "git@github.com:skygroup2/skn_lib.git", branch: "main"},
+      {:skn_proto, git: "git@github.com:skygroup2/skn_proto.git", branch: "main"},
       {:mmdb2_decoder, "~> 3.0"},
       {:observer_cli, "~> 1.7"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.2", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.3", only: [:dev], runtime: false},
     ]
   end
 end
