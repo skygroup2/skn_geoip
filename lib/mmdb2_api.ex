@@ -45,7 +45,7 @@ defmodule MMDB2.API do
   end
 
   def handle_cast(request, state) do
-    Logger.warn "drop #{inspect request}"
+    Logger.error "drop #{inspect request}"
     {:noreply, state}
   end
 
