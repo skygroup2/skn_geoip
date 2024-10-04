@@ -24,10 +24,12 @@ defmodule MMDB2.API do
 
   def init(id) do
     Process.flag(:trap_exit, true)
-    {mmdb, version} = MMDB2.Updater.get_mmdb()
-    {:ok, meta, tree, data} = read_mmdb2(mmdb)
-    reset_timer(:reload_db, :reload_db, 120_000)
-    {:ok, %{id: id, meta: meta, tree: tree, data: data, version: version}}
+    reset_timer(:reload_db, :reload_db, 10_000)
+    {:ok, %{id: id, meta: nil, tree: nil, data: nil, version: nil}}
+  end
+
+  def handle_call({:lookup, _ip}, _from, %{meta: nil, tree: nil, data: nil} = state) do
+    {:reply, {:error, :db_not_ready}, state}
   end
 
   def handle_call({:lookup, ip}, _from, %{meta: meta, tree: tree, data: data} = state) do

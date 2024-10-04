@@ -9,8 +9,11 @@ defmodule MMDB2.Updater do
   ]
   @name :mmdb_updater
 
-  def get_mmdb() do
-    GenServer.call(@name, :get_mmdb, :infinity)
+  def get_mmdb(timeout \\ :infinity) do
+    GenServer.call(@name, :get_mmdb, timeout)
+  catch
+    _, _exp ->
+      {:error, :timeout}
   end
 
   def start_link(args) do

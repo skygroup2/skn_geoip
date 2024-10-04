@@ -12,7 +12,7 @@ if config_env() == :prod do
       filters: [
         {:sasl_domain, {&:logger_filters.domain/2, {:stop, :equal, [:otp, :sasl]}}}
       ],
-      formatter: {:logger_formatter, %{time_offset: 'Z', template: [:time, " ", :level, " ", :mfa, "_", :line, " ", :pid, " ", :msg, "\n"]}},
+      formatter: {:logger_formatter, %{time_offset: ~c"Z", template: [:time, " ", :level, " ", :mfa, "_", :line, " ", :pid, " ", :msg, "\n"]}},
       level: :debug
     }},
     {:handler, :geoip_log_sasl, :logger_std_h, %{
@@ -26,7 +26,7 @@ if config_env() == :prod do
         {:remote_gl, {&:logger_filters.remote_gl/2, :stop}},
         {:sasl_domain, {&:logger_filters.domain/2, {:log, :equal, [:otp, :sasl]}}}
       ],
-      formatter: {:logger_formatter, %{time_offset: 'Z', legacy_header: true, single_line: false}},
+      formatter: {:logger_formatter, %{time_offset: ~c"Z", legacy_header: true, single_line: false}},
     }}
   ]
 
