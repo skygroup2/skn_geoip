@@ -7,7 +7,8 @@ defmodule GeoIP do
 
   def start(_type, _args) do
     :rand.seed :exs64, :os.timestamp
-    :logger.add_handlers(:skn_geoip)
+    log_handler = Application.get_env(:skn_geoip, :log_handler, :skn_geoip)
+    :logger.add_handlers(log_handler)
     mnesia_init()
     GeoIP.Config.check_set_license()
     ret = GeoIP.Sup.start_link()
