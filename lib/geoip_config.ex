@@ -20,7 +20,7 @@ defmodule GeoIP.Config do
 
   def get_license() do
     mmdb_lic_ptr = Skn.Counter.update_counter(:mmdb_lic_ptr, 1)
-    mmdb_lic = Skn.Config.get(:mmdb_lic, ["xlwBl5KsfAS8fTCu", "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"])
+    mmdb_lic = Skn.Config.get(:mmdb_lic, [])
     if length(mmdb_lic) > 0 do
       Enum.at(mmdb_lic, rem(mmdb_lic_ptr, length(mmdb_lic)))
     else
