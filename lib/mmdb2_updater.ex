@@ -23,7 +23,7 @@ defmodule MMDB2.Updater do
   def init(_args) do
     Process.flag(:trap_exit, true)
     Process.flag(:fullsweep_after, 0)
-    send(self(), :check_update)
+    reset_timer(:check_update, :check_update, 5_000)
     {:ok, %{mmdb: nil, waiter: [], version: GeoIP.Config.get_version()}}
   end
 
