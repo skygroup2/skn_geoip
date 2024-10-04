@@ -22,6 +22,7 @@ defmodule MMDB2.Updater do
 
   def init(_args) do
     Process.flag(:trap_exit, true)
+    Process.flag(:fullsweep_after, 0)
     send(self(), :check_update)
     {:ok, %{mmdb: nil, waiter: [], version: GeoIP.Config.get_version()}}
   end
@@ -45,11 +46,19 @@ defmodule MMDB2.Updater do
   end
 
   def handle_info(:check_update, state) do
-    {mmdb, version} = get_geoip_path("GeoLite2-Country")
-    GeoIP.Config.set_version(version)
-    Enum.each(state.waiter, fn x -> GenServer.reply(x, {mmdb, version}) end)
-    reset_timer(:check_update, :check_update, Skn.Config.get(:check_update_mmdb, 7_200_000))
-    {:noreply, %{mmdb: mmdb, version: version, waiter: []}}
+    case get_geoip_path("GeoLite2-Country") do
+      {:error, :download_limit} ->
+        reset_timer(:check_update, :check_update, 1200_000)
+        {:noreply, state}
+      {:error, _reason} ->
+        reset_timer(:check_update, :check_update, 120_000)
+        {:noreply, state}
+      {mmdb, version} ->
+        GeoIP.Config.set_version(version)
+        Enum.each(state.waiter, fn x -> GenServer.reply(x, {mmdb, version}) end)
+        reset_timer(:check_update, :check_update, Skn.Config.get(:check_update_mmdb, 7_200_000))
+        {:noreply, %{mmdb: mmdb, version: version, waiter: []}}
+    end
   catch
     _, exp ->
       Logger.error("check_update error #{inspect exp}/ #{inspect __STACKTRACE__}")
@@ -88,15 +97,24 @@ defmodule MMDB2.Updater do
         release_date = Date.from_iso8601!(Enum.join([yy, mm, dd], "-"))
         today = Date.utc_today()
         if Date.diff(today, release_date) >= 7 and check_create_time(tar) do
-          download_and_extract_db(db_dir, name)
-          get_geoip_path(name)
+          case download_and_extract_db(db_dir, name) do
+            {:error, _reason} ->
+              Logger.info("Using #{v}")
+              {db_dir <> "/" <> v <> "/#{name}.mmdb", release_date}
+            _ ->
+             get_geoip_path(name)
+          end
         else
           Logger.info("Using #{v}")
           {db_dir <> "/" <> v <> "/#{name}.mmdb", release_date}
         end
       [] ->
-        download_and_extract_db(db_dir, name)
-        get_geoip_path(name)
+        case download_and_extract_db(db_dir, name) do
+          {:error, reason} ->
+            {:error, reason}
+          _ ->
+            get_geoip_path(name)
+        end
     end
   end
 
@@ -105,15 +123,29 @@ defmodule MMDB2.Updater do
     HttpEx.request("GEO", method, url, headers, body, default_gun_option(), 0, [], nil)
   end
 
+  defp is_download_limit?(bin) do
+    byte_size(bin) <= 128 and String.contains?(bin, "download limit reached")
+  end
+
   def download_and_extract_db(db_dir, file) do
     tar = db_dir <> "/" <> file <> ".tar.gz"
     maxmind_license = GeoIP.Config.get_license()
-    Logger.info("Try to download #{file} : #{maxmind_license}")
-    url = "https://download.maxmind.com/app/geoip_download?edition_id=#{file}&license_key=#{maxmind_license}&suffix=tar.gz"
-    bin = make_request("GET", url, %{}, "") |> Map.fetch!(:body)
-    File.write!(tar, bin, [:write, :binary])
-    Logger.info("Finished download #{file}")
-    :erl_tar.extract(tar, [:compressed, {:cwd, to_charlist(db_dir)}])
+    if maxmind_license != nil do
+      Logger.info("Try to download #{file} : #{maxmind_license}")
+      url = "https://download.maxmind.com/app/geoip_download?edition_id=#{file}&license_key=#{maxmind_license}&suffix=tar.gz"
+      bin = make_request("GET", url, %{}, "") |> Map.fetch!(:body)
+      if is_download_limit?(bin) == false do
+        File.write!(tar, bin, [:write, :binary])
+        Logger.info("Finished download #{file}")
+        :erl_tar.extract(tar, [:compressed, {:cwd, to_charlist(db_dir)}])
+      else
+        Logger.error("#{String.trim(bin)}")
+        {:error, :download_limit}
+      end
+    else
+      Logger.error("Invalid license key #{maxmind_license}")
+      {:error, :invalid_license}
+    end
   end
 
   def clean_old_db(db_dir, remain) do

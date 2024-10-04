@@ -35,7 +35,7 @@ if config_env() == :prod do
     level: :debug
 
   config :mnesia,
-    dir: '#{System.fetch_env!("DB_ROOT_DIR")}',
+    dir: ~c"#{System.fetch_env!("DB_ROOT_DIR")}",
     dump_log_write_threshold: 250000,
     dc_dump_limit: 40
 end

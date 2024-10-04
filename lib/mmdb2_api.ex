@@ -16,6 +16,9 @@ defmodule MMDB2.API do
 
   def lookup(addr) do
     GenServer.call(round_robin(), {:lookup, format_ip_addr(addr)})
+  catch
+    _, _exp ->
+      {:error, :timeout}
   end
 
   def start_link(id) do
@@ -55,9 +58,13 @@ defmodule MMDB2.API do
     # check read new db
     reset_timer(:reload_db, :reload_db, 120_000)
     if GeoIP.Config.get_version() != version do
-      {mmdb, version} = MMDB2.Updater.get_mmdb()
-      {:ok, meta, tree, data} = read_mmdb2(mmdb)
-      {:noreply, %{state| meta: meta, tree: tree, data: data, version: version}}
+      case MMDB2.Updater.get_mmdb(5_000) do
+        {:error, _reason} ->
+          {:noreply, state}
+        {mmdb, version} ->
+          {:ok, meta, tree, data} = read_mmdb2(mmdb)
+          {:noreply, %{state| meta: meta, tree: tree, data: data, version: version}}
+      end
     else
       {:noreply, state}
     end
