@@ -120,7 +120,7 @@ defmodule MMDB2.Updater do
 
   defp default_gun_option, do: Gun.default_option(25_000, 90_000)
   defp make_request(method, url, headers, body) do
-    HttpEx.request("GEO", method, url, headers, body, default_gun_option(), 0, [], nil)
+    HttpEx.request("GEO", method, url, headers, body, default_gun_option(), 1, [], nil)
   end
 
   defp is_download_limit?(bin) do
