@@ -22,9 +22,9 @@ defmodule SknGeoip.MixProject do
         :mnesia,
         :logger,
         :jason,
-        :gun,
         :skn_lib,
-        :skn_proto,
+        :mint,
+        :cq_util,
         :runtime_tools,
         :observer_cli
       ]
@@ -35,7 +35,7 @@ defmodule SknGeoip.MixProject do
   defp deps do
     [
       {:skn_lib, git: "git@github.com:skygroup2/skn_lib.git", branch: "main"},
-      {:skn_proto, git: "git@github.com:skygroup2/skn_proto.git", branch: "main"},
+      {:cq_util, git: "git@github.com:orange-capital/cq-util.ex.git", branch: "main"},
       {:mmdb2_decoder, "~> 3.0"},
       {:observer_cli, "~> 1.7"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

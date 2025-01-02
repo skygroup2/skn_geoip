@@ -118,9 +118,9 @@ defmodule MMDB2.Updater do
     end
   end
 
-  defp default_gun_option, do: Gun.default_option(25_000, 90_000)
+  defp default_proxy_option, do: CQ.HttpEx.sync_proxy_option(%{}, 25_000, 90_000)
   defp make_request(method, url, headers, body) do
-    HttpEx.request("GEO", method, url, headers, body, default_gun_option(), 1, [], nil)
+    CQ.HttpEx.request("GEO", method, url, headers, body, default_proxy_option(), 1, [], nil)
   end
 
   defp is_download_limit?(bin) do
